@@ -1,6 +1,6 @@
-# INSTALL DI TERMUX (binary pre-compiled, NO Rust needed):
-#   pkg install python-cryptography python-paramiko python-requests -y
-#   pip install librouteros rich
+# INSTALL DI TERMUX (2 langkah):
+#   pkg install python-cryptography -y
+#   pip install paramiko requests librouteros rich
 #
 # INSTALL DI LINUX:
 #   sudo apt install python3-dev build-essential libssl-dev -y

@@ -60,8 +60,8 @@ if [ "$METHOD" = "3" ]; then
     echo -e "${CYAN}=== Perintah Manual ===${RST}"
     echo ""
     if $IS_TERMUX; then
-        echo "  pkg install python-cryptography python-paramiko python-requests -y"
-        echo "  pip install librouteros rich"
+        echo "  pkg install python-cryptography -y"
+        echo "  pip install paramiko requests librouteros rich"
     else
         echo "  sudo apt install python3-dev build-essential libssl-dev -y"
         echo "  pip install cryptography paramiko requests librouteros rich"
@@ -75,34 +75,28 @@ fi
 echo ""
 
 if $IS_TERMUX && [ "$METHOD" != "2" ]; then
-    echo -e "${CYAN}[*] Install cryptographic libs via pkg (binary)...${RST}"
-    echo -e "  -> Mencoba 'python-cryptography python-paramiko python-requests'"
+    echo -e "${CYAN}[*] Install cryptography via pkg (binary, NO Rust)...${RST}"
+    echo -e "  -> pkg install python-cryptography"
 
     PKG_OK=true
-    pkg install python-cryptography python-paramiko python-requests -y 2>/dev/null || {
-        apt install python-cryptography python-paramiko python-requests -y 2>/dev/null || {
+    pkg install python-cryptography -y 2>/dev/null || {
+        apt install python-cryptography -y 2>/dev/null || {
             PKG_OK=false
         }
     }
 
     if ! $PKG_OK; then
         echo ""
-        echo -e "${RED}[!] GAGAL install via pkg/apt${RST}"
-        echo -e "${YELLOW}[!] cryptography butuh Rust kalau di-pip, jadi HARUS dari pkg Termux.${RST}"
-        echo ""
-        echo -e "  Coba manual satu per satu:"
-        echo -e "    ${CYAN}pkg update${RST}"
-        echo -e "    ${CYAN}pkg search cryptography${RST}"
-        echo -e "    ${CYAN}pkg install python-cryptography${RST}"
-        echo -e "    ${CYAN}pkg install python-paramiko${RST}"
-        echo -e "    ${CYAN}pkg install python-requests${RST}"
-        echo ""
-        echo -e "  Atau ubah mirror Termux:"
-        echo -e "    ${CYAN}termux-change-repo${RST}"
+        echo -e "${RED}[!] GAGAL: python-cryptography tidak ditemukan di repo pkg.${RST}"
+        echo -e "  Coba: ${CYAN}termux-change-repo${RST} (pilih mirror terdekat)"
+        echo -e "  Lalu: ${CYAN}pkg update && pkg install python-cryptography${RST}"
         exit 1
     fi
 
-    echo -e "${GREEN}[+] Binary libs terinstall${RST}"
+    echo -e "${GREEN}[+] cryptography terinstall (binary)${RST}"
+    echo ""
+    echo -e "${CYAN}[*] Install paramiko + requests via pip (pure Python)...${RST}"
+    pip install paramiko requests 2>/dev/null || pip3 install paramiko requests
 else
     echo -e "${CYAN}[*] Install via pip (Linux) ...${RST}"
     echo -e "  -> Install build tools dulu ..."
