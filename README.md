@@ -25,23 +25,34 @@ RECON → EXPLOIT → POST-EXPLOIT
 | 9 | Infra Inspector | DNS, DHCP, PPP, Hotspot, Interface |
 | 10 | Stress Tester | TCP flood, HTTP flood, Slowloris simulator |
 
-## Quick Install (Termux)
+## Quick Install
 
+### Termux (Android)
 ```bash
 git clone https://github.com/mikrofunakjs/mt-auditor.git
 cd mt-auditor
-bash install.sh
+bash install.sh    # auto-install dependencies
+bash run.sh        # jalankan tools
+```
+
+### Linux Desktop
+```bash
+git clone https://github.com/mikrofunakjs/mt-auditor.git
+cd mt-auditor
+bash install.sh    # pilih opsi [2]
 bash run.sh
 ```
 
-## Manual Install
+## Manual Install (Termux)
 
 ```bash
-# Termux
-pkg install python3-cryptography python3-paramiko python3-requests -y
-pip install librouteros rich
+# Step 1: cryptography (binary, tidak butuh Rust)
+pkg install python-cryptography -y
 
-# Jalankan
+# Step 2: sisanya via pip (pure Python, ringan)
+pip install paramiko requests librouteros rich
+
+# Step 3: jalankan
 python mt.py
 ```
 
