@@ -28,7 +28,7 @@ RECON → EXPLOIT → POST-EXPLOIT
 ## Quick Install (Termux)
 
 ```bash
-git clone https://github.com/USERNAME/mt-auditor.git
+git clone https://github.com/mikrofunakjs/mt-auditor.git
 cd mt-auditor
 bash install.sh
 bash run.sh
