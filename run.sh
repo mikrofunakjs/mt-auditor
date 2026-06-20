@@ -21,13 +21,14 @@ check_python() {
 PYTHON=$(check_python)
 
 if [ -z "$PYTHON" ]; then
-    echo -e "${RED}[-] Python3 tidak ditemukan! Jalankan install.sh dulu.${RST}"
+    echo -e "${RED}[-] Python tidak ditemukan! Jalankan install.sh dulu.${RST}"
     exit 1
 fi
 
 check_deps() {
-    $PYTHON -c "import requests, sys" 2>/dev/null || {
-        echo -e "${RED}[-] Library belum terinstall. Jalankan: bash install.sh${RST}"
+    $PYTHON -c "from core.utils import info, BANNER; print('OK')" 2>/dev/null || {
+        echo -e "${RED}[-] Library belum terinstall atau import gagal.${RST}"
+        echo -e "${RED}    Jalankan: bash install.sh${RST}"
         exit 1
     }
 }
