@@ -10,20 +10,34 @@ Toolkit audit keamanan MikroTik untuk RT/RW Net. Cari celah lalu amankan.
 RECON → EXPLOIT → POST-EXPLOIT
 ```
 
-## Fitur (10 Modul)
+## Fitur (10 Core + 9 Hotspot Exploit)
 
-| # | Modul | Fungsi |
-|---|-------|--------|
-| 1 | Subnet Scanner | Ping sweep + deteksi MikroTik (MAC OUI, port signature) |
-| 2 | Port Auditor | Scan 20 port khas MikroTik |
-| 3 | Service Detector | Fingerprint service (SSH/API/WebFig/Winbox) |
-| 4 | Credential Tester | Cek default/weak password via SSH, API, HTTP |
-| 5 | Brute Forcer | Brute force SSH & API multithread |
-| 6 | Config Parser | Export & analisis konfig via MikroTik API |
-| 7 | User Auditor | Audit user + cek password strength |
-| 8 | Firewall Analyzer | Analisis firewall rules (INPUT, FORWARD, NAT) |
-| 9 | Infra Inspector | DNS, DHCP, PPP, Hotspot, Interface |
-| 10 | Stress Tester | TCP flood, HTTP flood, Slowloris simulator |
+| # | Core Modul | Fungsi |
+|---|-----------|--------|
+| 1 | Subnet Scanner | Ping sweep + deteksi MikroTik (MAC OUI, MNDP, port signature) |
+| 2 | Port Auditor | Scan 20 port khas MikroTik (multithread) |
+| 3 | Service Detector | Fingerprint service: SSH/API/WebFig/Winbox/FTP/Telnet |
+| 4 | Credential Tester | Default/weak password via SSH + API + HTTP |
+| 5 | Brute Forcer | Brute force SSH & MikroTik API multithread |
+| 6 | Config Parser | Export full config via API + auto analisis isu keamanan |
+| 7 | User Auditor | Audit user list + cek password strength + active sessions |
+| 8 | Firewall Analyzer | Analisis INPUT/FORWARD/NAT rules + deteksi miskonfigurasi |
+| 9 | Infra Inspector | DNS, DHCP, PPPoE, Hotspot server, Interfaces |
+| 10 | Stress Tester | TCP connect flood, HTTP GET flood, Slowloris simulator |
+
+### Hotspot Exploit (WiFi Voucher) — 9 Attack Vectors
+
+| # | Sub-Modul | Vektor Serangan |
+|---|-----------|----------------|
+| 1 | Login Page Analyzer | HTTP vs HTTPS, Captcha, CSRF token, open redirect, sensitive endpoints, REST API probe |
+| 2 | HTTP Sniff Test | Deteksi kredensial plaintext + panduan ARP spoof + bettercap |
+| 3 | Walled Garden Bypass | DNS tunnel, DoH bypass, TCP direct test, domain whitelist enumeration |
+| 4 | Voucher Bruteforce | Pattern analysis (sequential, date, dictionary, random) + multithread POST |
+| 5 | Trial MAC Bypass | MAC rotation script + trial endpoint detector |
+| 6 | Session Hijack | Cookie analysis (Secure, HttpOnly) + replay attack scenario |
+| 7 | API Voucher Generator | Via librouteros: buat voucher, list profiles, active sessions, cookies |
+| 8 | Winbox File Read | CVE-2018-14847: directory traversal baca user.dat tanpa auth |
+| 9 | REST API Probe | RouterOS v7+ /rest/ endpoint enumeration + config export |
 
 ## Quick Install
 
@@ -72,25 +86,28 @@ python mt.py
 
 ```
 mt-auditor/
-├── mt.py              # CLI menu utama
+├── mt.py              # CLI menu utama (6 option + hotspot sub-menu)
 ├── install.sh         # Auto-installer (Termux & Linux)
-├── run.sh             # Quick run
+├── run.sh             # Quick run + dependency check
 ├── core/
-│   ├── scanner.py     # Subnet scanner
-│   ├── port_audit.py  # Port scanner
-│   ├── service_detect.py
-│   ├── cred_test.py   # Password tester
-│   ├── bruteforce.py  # SSH/API brute force
-│   ├── config_parser.py
-│   ├── user_audit.py
-│   ├── firewall_analyze.py
-│   ├── infra_inspect.py
-│   └── stress.py      # Stress tester
+│   ├── scanner.py     # Subnet scanner + MikroTik detection
+│   ├── port_audit.py  # Port scanner 20 port khas
+│   ├── service_detect.py  # Service banner grab + fingerprint
+│   ├── cred_test.py   # Default/weak password tester
+│   ├── bruteforce.py  # SSH & API brute force
+│   ├── config_parser.py   # MikroTik config export + analyzer
+│   ├── user_audit.py  # User enumeration + weakness check
+│   ├── firewall_analyze.py # Firewall rule audit
+│   ├── infra_inspect.py    # DNS/DHCP/PPP/Hotspot inspection
+│   ├── stress.py      # TCP/HTTP flood + Slowloris
+│   └── hotspot_exploit.py  # 9 WiFi voucher attack vectors
 ├── wordlists/
-│   ├── mikrotik_defaults.txt
-│   └── common_passwords.txt
-├── reports/           # Output laporan
-└── requirements.txt
+│   ├── mikrotik_defaults.txt  # 25 default MikroTik passwords
+│   └── common_passwords.txt   # 50 weak passwords
+├── reports/           # Output laporan audit
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
 
 ## License
