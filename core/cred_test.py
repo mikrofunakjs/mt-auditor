@@ -4,7 +4,7 @@ import socket
 import time
 from .utils import (
     info, ok, warn, error, kritikal, section,
-    GREEN, RED, YELLOW, CYAN, RST, BOLD
+    GREEN, RED, YELLOW, CYAN, RST, BOLD, DIM
 )
 
 WORDLIST_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "wordlists")

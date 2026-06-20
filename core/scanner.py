@@ -3,7 +3,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .utils import (
     ping_host, get_arp_table, check_mikrotik_mac,
-    info, ok, warn, error, section, validate_subnet, get_local_ip
+    info, ok, warn, error, section, validate_subnet, get_local_ip,
+    CYAN, RST
 )
 
 MIKROTIK_PORTS = [80, 443, 8291, 8728, 8729, 21, 22, 23]
