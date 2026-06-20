@@ -21,6 +21,7 @@ from core.user_audit import audit_users, check_active_sessions
 from core.firewall_analyze import analyze_firewall
 from core.infra_inspect import inspect_infrastructure
 from core.stress import stress_menu
+from core.hotspot_exploit import hotspot_menu
 
 
 def main_menu():
@@ -37,7 +38,8 @@ def main_menu():
         print(f"  {YELLOW}3{RST}) Recon Only (Scan + Port + Service Detect)")
         print(f"  {YELLOW}4{RST}) Credential Brute Force")
         print(f"  {YELLOW}5{RST}) Stress Test Menu")
-        print(f"  {YELLOW}6{RST}) Ganti Target IP")
+        print(f"  {YELLOW}6{RST}) Hotspot Exploit (WiFi Voucher)")
+        print(f"  {YELLOW}7{RST}) Ganti Target IP")
         print(f"  {YELLOW}0{RST}) Exit")
         print()
 
@@ -67,6 +69,9 @@ def main_menu():
             stress_menu(target_ip)
 
         elif choice == "6":
+            run_hotspot_exploit(target_ip)
+
+        elif choice == "7":
             target_ip = get_target()
 
         else:
@@ -174,6 +179,13 @@ def run_full_exploit(target_ip):
         check_active_sessions(target_ip, credentials_found, services_found)
         analyze_firewall(target_ip, credentials_found, services_found)
         inspect_infrastructure(target_ip, credentials_found, services_found)
+
+        if any(p["port"] in [80, 443] for p in open_ports):
+            print()
+            info("Port HTTP/HTTPS terbuka — menjalankan Hotspot Exploit...")
+            time.sleep(0.5)
+            from core.hotspot_exploit import login_page_analyzer
+            login_page_analyzer(target_ip, any(p["port"] == 443 for p in open_ports))
     else:
         warn("Login gagal — hanya menjalankan recon.")
         ok("Gunakan menu (4) untuk brute force credential.")
@@ -243,6 +255,31 @@ def run_bruteforce(target_ip):
         )
         if result:
             ok(f"Credential valid: {result['username']}:{result['password']}")
+
+
+def run_hotspot_exploit(target_ip):
+    section("HOTSPOT EXPLOIT")
+
+    if "/" in target_ip:
+        mikrotik_hosts = scan_subnet(target_ip)
+        if not mikrotik_hosts:
+            error("Tidak ada host terdeteksi.")
+            return
+        target_ip = mikrotik_hosts[0]["ip"]
+        info(f"Menggunakan: {target_ip}")
+
+    open_ports = audit_ports(target_ip)
+    services_found = []
+    credentials_found = []
+
+    if open_ports:
+        services_found = detect_services(target_ip, open_ports)
+
+    if services_found:
+        info("Mencoba login dengan default credential...")
+        credentials_found = test_creds(target_ip, services_found)
+
+    hotspot_menu(target_ip, open_ports, credentials_found)
 
 
 def generate_audit_summary(ip, open_ports, services, credentials):
