@@ -1,0 +1,8 @@
+# INSTALL DI TERMUX:
+#   pkg install python3-cryptography python3-paramiko python3-requests -y
+#   pip install librouteros rich
+
+requests>=2.28
+paramiko>=3.0
+librouteros>=3.2
+rich>=13.0
