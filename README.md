@@ -46,10 +46,10 @@ bash run.sh
 ## Manual Install (Termux)
 
 ```bash
-# Step 1: cryptography (binary, tidak butuh Rust)
-pkg install python-cryptography -y
+# Step 1: cryptography + Rust (binary, no compile needed)
+pkg install python-cryptography rust binutils -y
 
-# Step 2: sisanya via pip (pure Python, ringan)
+# Step 2: sisanya via pip
 pip install paramiko requests librouteros rich
 
 # Step 3: jalankan

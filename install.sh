@@ -60,7 +60,7 @@ if [ "$METHOD" = "3" ]; then
     echo -e "${CYAN}=== Perintah Manual ===${RST}"
     echo ""
     if $IS_TERMUX; then
-        echo "  pkg install python-cryptography -y"
+        echo "  pkg install python-cryptography rust binutils -y"
         echo "  pip install paramiko requests librouteros rich"
     else
         echo "  sudo apt install python3-dev build-essential libssl-dev -y"
@@ -94,8 +94,18 @@ if $IS_TERMUX && [ "$METHOD" != "2" ]; then
     fi
 
     echo -e "${GREEN}[+] cryptography terinstall (binary)${RST}"
+
     echo ""
-    echo -e "${CYAN}[*] Install paramiko + requests via pip (pure Python)...${RST}"
+    echo -e "${CYAN}[*] Install Rust compiler (buat bcrypt & pynacl)...${RST}"
+    pkg install rust binutils -y 2>/dev/null || apt install rust binutils -y 2>/dev/null || {
+        echo -e "${YELLOW}[!] Rust gagal terinstall via pkg, coba manual:${RST}"
+        echo -e "    ${CYAN}pkg install rust binutils${RST}"
+        exit 1
+    }
+    echo -e "${GREEN}[+] Rust compiler terinstall${RST}"
+
+    echo ""
+    echo -e "${CYAN}[*] Install paramiko + requests via pip ...${RST}"
     pip install paramiko requests 2>/dev/null || pip3 install paramiko requests
 else
     echo -e "${CYAN}[*] Install via pip (Linux) ...${RST}"

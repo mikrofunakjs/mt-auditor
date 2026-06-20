@@ -1,5 +1,5 @@
-# INSTALL DI TERMUX (2 langkah):
-#   pkg install python-cryptography -y
+# INSTALL DI TERMUX (3 baris):
+#   pkg install python-cryptography rust binutils -y
 #   pip install paramiko requests librouteros rich
 #
 # INSTALL DI LINUX:
