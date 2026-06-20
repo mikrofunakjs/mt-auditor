@@ -93,7 +93,6 @@ def detect_services(ip, open_ports):
     results = []
     for entry in open_ports:
         port = entry["port"]
-        info(f"  Port {port}/tcp ...", end="")
         banner = grab_banner(ip, port)
         service = identify_service(ip, port, banner or "")
 
@@ -104,9 +103,9 @@ def detect_services(ip, open_ports):
         }
 
         if service != "unknown":
-            ok(f" -> {service}")
+            ok(f"Port {port}/tcp -> {service}")
         else:
-            warn(f" -> Tidak teridentifikasi")
+            warn(f"Port {port}/tcp -> Tidak teridentifikasi")
 
         results.append(result)
 
